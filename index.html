@@ -16,7 +16,6 @@
     body { background: var(--bronze-dark); color: var(--cream); overflow: hidden; }
     #game-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 1; touch-action: none; }
 
-    /* Nhắc xoay ngang trên màn hình dọc */
     #rotate-hint {
       display: none; position: fixed; top: 4px; left: 50%; transform: translateX(-50%);
       z-index: 12; background: rgba(230, 190, 82, 0.92); color: #102024;
@@ -59,11 +58,10 @@
     .player-item { padding: 3px 0; border-bottom: 1px dashed #244046; display: flex; justify-content: space-between; gap: 6px; }
     .conflict-badge { color: #ff8278; font-weight: 700; }
 
-    /* HUD tối ưu ngang */
     #hud { position: fixed; inset: 0; z-index: 5; pointer-events: none; display: none; }
     #top-bar {
       position: absolute; top: 8px; left: 10px;
-      width: min(460px, 47vw);
+      width: min(470px, 47vw);
       background: rgba(13, 30, 35, 0.88); backdrop-filter: blur(5px);
       padding: 6px 10px; border-radius: 11px; border: 1.5px solid var(--gold);
     }
@@ -100,7 +98,7 @@
 
     #role-panel {
       position: absolute; bottom: 10px; right: 10px;
-      width: min(460px, 49vw);
+      width: min(470px, 49vw);
       background: linear-gradient(180deg, rgba(24, 47, 53, 0.94), rgba(14, 29, 34, 0.96));
       border: 2px solid var(--gold); border-radius: 12px; padding: 9px 11px;
       pointer-events: auto; text-align: center;
@@ -108,7 +106,6 @@
     .btn-group { display: flex; gap: 6px; justify-content: center; margin-top: 6px; }
     .btn-group button { margin-top: 0; padding: 9px 6px; font-size: 12px; }
 
-    /* Khi màn hình dọc hẹp */
     @media (orientation: portrait) {
       #top-bar { top: 26px; left: 50%; transform: translateX(-50%); width: 95%; max-width: 520px; }
       #team-banner { top: 122px; left: 50%; right: auto; transform: translateX(-50%); }
@@ -117,7 +114,7 @@
     }
 
     .rank-box {
-      margin-top: 10px; max-height: 150px; overflow-y: auto; text-align: left;
+      margin-top: 8px; max-height: 145px; overflow-y: auto; text-align: left;
       background: #0e1f23; padding: 8px 10px; border-radius: 8px; border: 1px solid #3a626a; font-size: 12px;
     }
     .rank-row { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px dashed #244046; }
@@ -186,7 +183,7 @@
   <div id="podium" class="overlay" style="display: none;">
     <div class="card">
       <h2>🏆 KẾT QUẢ TRẬN ĐUA</h2>
-      <div id="ranking-list" class="rank-box" style="max-height:115px;"></div>
+      <div id="ranking-list" class="rank-box" style="max-height:110px;"></div>
       <h3 style="font-size:14px; color:var(--gold-bright); margin-top:10px; text-align:left;">⭐ XẾP HẠNG ĐÓNG GÓP CÁ NHÂN</h3>
       <div id="contribution-list" class="rank-box"></div>
       <button id="reset-room-btn">🔄 VÁN MỚI</button>
