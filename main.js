@@ -33,7 +33,7 @@ const ROLE_NAMES = {
 const ROLE_BRIEF = {
   rower_left: '<b>Ai:</b> Chèo Trái · <b>Làm:</b> Chèo đúng nhịp & lệnh · <b>Ảnh hưởng:</b> Đẩy ghe, chèo đồng nhịp tạo sóng.',
   rower_right: '<b>Ai:</b> Chèo Phải · <b>Làm:</b> Chèo đúng nhịp & lệnh · <b>Ảnh hưởng:</b> Đẩy ghe, chèo đồng nhịp tạo sóng.',
-  drummer: '<b>Ai:</b> Tay Trống · <b>Làm:</b> Gõ nhịp/dồn trống/ngân chiêng · <b>Ảnh hưởng:</b> Combo ≥ 3 mở rộng vùng chèo cho đội.',
+  er: '<b>Ai:</b> Tay Trống · <b>Làm:</b> Gõ nhịp/dồn trống/ngân chiêng · <b>Ảnh hưởng:</b> Combo ≥ 3 mở rộng vùng chèo cho đội.',
   scholar: '<b>Ai:</b> Đáp Hội · <b>Làm:</b> Ghép chữ hoặc đổi mảnh hình · <b>Ảnh hưởng:</b> Nạp Linh Khí cho cả ghe.',
   saboteur: '<b>Ai:</b> Phá Đám · <b>Làm:</b> Giữ xoay hướng & thả ném Bèo · <b>Ảnh hưởng:</b> Làm chậm ghe địch hoặc buff Tù Và.'
 };
@@ -932,180 +932,118 @@ function renderRoleControls() {
     document.getElementById('btn-bird').onclick = () => handleRow('🦅 CHIM LẠC');
   }
 
-  // 2. TAY TRỐNG: 3 cơ chế bấm (Canh Nhịp, Dồn Trống 4 Nhịp, Nhấn Giữ Ngân Chiêng) + phạt khi sai/spam
+  // 2. TAY TRỐNG: Gõ mặt trống sáng nối Combo + Xả Trống khi đầy thanh nhịp
   else if (role === 'drummer') {
     let combo = 0;
-    let mode = 'beat'; // 'beat' | 'burst' | 'hold'
+    let charge = 0;
     let targetPad = 0;
-    let beatProgress = 0;
-    let burstHits = 0;
-    let burstStart = 0;
-    let holdPower = 0;
-    let isHolding = false;
-    let lockedUntil = 0;
     let lastHitTime = 0;
+    let softLockUntil = 0;
 
-    const pickNextMode = () => {
-      const r = Math.random();
-      targetPad = Math.floor(Math.random() * 3);
-      beatProgress = 0;
-      burstHits = 0;
-      burstStart = Date.now();
-      holdPower = 0;
-      isHolding = false;
-      mode = r < 0.45 ? 'beat' : r < 0.75 ? 'burst' : 'hold';
-      drawDrumUI();
-    };
+    const padNames = ['🥁 TRỐNG CÁI', '🪘 TRỐNG CON', '🔔 CHIÊNG ĐỒNG'];
+    const padFreqs = [95, 160, 330];
 
-    const penalizeDrum = (msg) => {
-      combo = 0;
-      lockedUntil = Date.now() + 550;
-      playDrumSound(72, 0.18, 'sawtooth', 0.28);
-      updateBoatState(state.assignedBoat, (b) => { b.drumCombo = 0; });
-      const cEl = document.getElementById('drum-combo');
-      if (cEl) cEl.innerText = '0';
-      const mEl = document.getElementById('drum-msg');
-      if (mEl) { mEl.style.color = '#ff7b72'; mEl.innerText = msg; }
-    };
+    panel.innerHTML = `
+      <div style="display:flex; justify-content:space-between; font-size:12px;">
+        <strong>${ROLE_NAMES[role]} · Combo: <span id="drum-combo">0</span></strong>
+        <span id="drum-msg" style="color:#ffe38e;">Gõ nút sáng · Đầy thanh thì XẢ TRỐNG</span>
+      </div>
+      <div style="width:100%; height:14px; background:#0e1f23; border:1px solid #e6be52; border-radius:7px; overflow:hidden; margin:5px 0;">
+        <div id="drum-charge-bar" style="width:0%; height:100%; background:linear-gradient(90deg,#e6be52,#ffe38e); transition:width 0.1s;"></div>
+      </div>
+      <div class="btn-group">
+        ${[0, 1, 2].map(i => `
+          <button class="d-pad" data-i="${i}">${padNames[i]}</button>
+        `).join('')}
+        <button id="burst-drum-btn" class="secondary" disabled style="min-width:92px;">⚡ XẢ TRỐNG</button>
+      </div>
+    `;
 
-    const rewardDrum = (pts, deltaProg, label) => {
-      combo++;
-      addPersonalScore(pts);
-      addBoatProgress(state.assignedBoat, deltaProg, 3);
-      spawnSplash(state.assignedBoat, 6, 0xffe38e);
-      updateBoatState(state.assignedBoat, (b) => { b.drumCombo = combo; });
-      if (combo >= 3) {
-        showTeamBanner(`🥁 TRỐNG TỐT! (x${combo}) — Mở rộng vùng chèo!`);
-      }
-      const cEl = document.getElementById('drum-combo');
-      if (cEl) cEl.innerText = String(combo);
-      const mEl = document.getElementById('drum-msg');
-      if (mEl) { mEl.style.color = '#7ef9d4'; mEl.innerText = `${label} +${pts}đ`; }
-      pickNextMode();
-    };
+    const pads = document.querySelectorAll('.d-pad');
+    const burstBtn = document.getElementById('burst-drum-btn');
+    const msgEl = document.getElementById('drum-msg');
+    const comboEl = document.getElementById('drum-combo');
+    const barEl = document.getElementById('drum-charge-bar');
 
-    const drawDrumUI = () => {
-      const padNames = ['🥁 TRỐNG CÁI', '🪘 TRỐNG CON', '🔔 CHIÊNG ĐỒNG'];
-      const padFreqs = [95, 160, 330];
-
-      let title = '';
-      if (mode === 'beat') title = `CANH NHỊP: Chạm ${padNames[targetPad]} khi vạch tới 100%`;
-      else if (mode === 'burst') title = `DỒN TRỐNG: Gõ ${padNames[targetPad]} 4 lần (< 2.2s)`;
-      else title = `NGÂN TIẾNG: Giữ ${padNames[targetPad]} tới vùng vàng rồi thả`;
-
-      panel.innerHTML = `
-        <div style="display:flex; justify-content:space-between; font-size:12px;">
-          <strong>${ROLE_NAMES[role]} · Combo: <span id="drum-combo">${combo}</span></strong>
-          <span id="drum-msg" style="color:#ffe38e;"></span>
-        </div>
-        <div style="font-size:11.5px; color:#ffe38e; font-weight:700; margin:3px 0;">${title}</div>
-        <div style="width:100%; height:12px; background:#0e1f23; border:1px solid #e6be52; border-radius:6px; overflow:hidden; position:relative; margin-bottom:6px;">
-          ${mode === 'hold' ? '<div style="position:absolute; left:55%; width:25%; height:100%; background:rgba(46,204,113,0.55);"></div>' : ''}
-          <div id="drum-meter" style="width:0%; height:100%; background:#ffd97d;"></div>
-        </div>
-        <div class="btn-group">
-          ${[0, 1, 2].map(i => `
-            <button class="d-pad" data-i="${i}" style="background:${i === targetPad ? '#ffe38e' : '#234249'}; color:${i === targetPad ? '#102024' : '#f8eed8'};">
-              ${padNames[i]}
-            </button>
-          `).join('')}
-        </div>
-      `;
-
-      document.querySelectorAll('.d-pad').forEach(btn => {
-        const idx = Number(btn.dataset.i);
-        const freq = padFreqs[idx];
-
-        if (mode === 'hold' && idx === targetPad) {
-          btn.onpointerdown = () => {
-            if (Date.now() < lockedUntil) return;
-            isHolding = true;
-            holdPower = 0;
-            playDrumSound(freq, 0.25, 'triangle', 0.3);
-          };
-          btn.onpointerup = () => {
-            if (!isHolding) return;
-            isHolding = false;
-            if (holdPower >= 55 && holdPower <= 82) {
-              playCheerSound();
-              rewardDrum(25, 2.8, 'NGÂN CHUẨN!');
-            } else {
-              penalizeDrum('NGÂN LỆCH NHỊP!');
-            }
-          };
-        } else {
-          btn.onclick = () => {
-            const now = Date.now();
-            if (now < lockedUntil) return;
-            if (now - lastHitTime < 150) {
-              penalizeDrum('GÕ LOẠN!');
-              return;
-            }
-            lastHitTime = now;
-            playDrumSound(freq, 0.16);
-
-            if (idx !== targetPad) {
-              penalizeDrum('SAI MẶT TRỐNG!');
-              return;
-            }
-
-            if (mode === 'beat') {
-              if (beatProgress >= 72) {
-                rewardDrum(20, 2.2, 'ĐÚNG NHỊP!');
-              } else {
-                penalizeDrum('GÕ SỚM!');
-              }
-            } else if (mode === 'burst') {
-              burstHits++;
-              if (now - burstStart > 2200) {
-                penalizeDrum('HẾT GIỜ DỒN!');
-                return;
-              }
-              if (burstHits >= 4) {
-                playCheerSound();
-                rewardDrum(28, 3.0, 'DỒN TRỐNG XONG!');
-              }
-            } else if (mode === 'hold') {
-              penalizeDrum('PHẢI NHẤN GIỮ!');
-            }
-          };
-        }
+    const pickNextPad = () => {
+      let next = Math.floor(Math.random() * 3);
+      if (next === targetPad) next = (next + 1) % 3;
+      targetPad = next;
+      pads.forEach((b, i) => {
+        b.style.background = i === targetPad ? '#ffe38e' : '#234249';
+        b.style.color = i === targetPad ? '#102024' : '#f8eed8';
       });
     };
 
-    drawDrumUI();
-
-    activeMiniLoop = setInterval(() => {
-      const now = Date.now();
-      const meter = document.getElementById('drum-meter');
-      const isLocked = now < lockedUntil;
-      document.querySelectorAll('.d-pad').forEach(b => { b.disabled = isLocked; });
-
-      if (mode === 'beat') {
-        beatProgress += 2.6;
-        if (meter) meter.style.width = Math.min(100, beatProgress) + '%';
-        if (beatProgress > 105) {
-          penalizeDrum('TRỄ NHỊP!');
-          pickNextMode();
-        }
-      } else if (mode === 'burst') {
-        const pct = Math.min(100, (burstHits / 4) * 100);
-        if (meter) meter.style.width = pct + '%';
-        if (now - burstStart > 2200 && burstHits < 4) {
-          penalizeDrum('CHẬM DỒN TRỐNG!');
-          pickNextMode();
-        }
-      } else if (mode === 'hold') {
-        if (isHolding) {
-          holdPower = Math.min(100, holdPower + 2.5);
-          if (meter) meter.style.width = holdPower + '%';
-          if (holdPower >= 100) {
-            isHolding = false;
-            penalizeDrum('NGÂN QUÁ LỐ!');
-          }
-        }
+    const refreshDrumUI = (statusText, color = '#ffe38e') => {
+      if (comboEl) comboEl.innerText = String(combo);
+      if (barEl) barEl.style.width = `${Math.min(100, charge)}%`;
+      if (burstBtn) burstBtn.disabled = charge < 100;
+      if (msgEl && statusText) {
+        msgEl.innerText = statusText;
+        msgEl.style.color = color;
       }
-    }, 30);
+    };
+
+    pickNextPad();
+
+    pads.forEach(btn => {
+      btn.onclick = () => {
+        const now = Date.now();
+        if (now < softLockUntil) return;
+
+        const idx = Number(btn.dataset.i);
+        const freq = padFreqs[idx];
+
+        // Chống spam bấm liên tục quá nhanh (< 140ms)
+        if (now - lastHitTime < 140) {
+          softLockUntil = now + 260;
+          combo = Math.max(0, combo - 1);
+          playDrumSound(75, 0.12, 'sawtooth', 0.2);
+          updateBoatState(state.assignedBoat, (b) => { b.drumCombo = combo; });
+          refreshDrumUI('Gõ quá nhanh! -1 Combo', '#ff8278');
+          return;
+        }
+        lastHitTime = now;
+
+        if (idx === targetPad) {
+          combo++;
+          charge = Math.min(100, charge + 25);
+          playDrumSound(freq, 0.16);
+          if (navigator.vibrate) navigator.vibrate(20);
+          spawnSplash(state.assignedBoat, 5, 0xffe38e);
+          addBoatProgress(state.assignedBoat, 1.35 * Math.min(2.2, 1 + combo * 0.08), 2);
+          addPersonalScore(15);
+
+          updateBoatState(state.assignedBoat, (b) => { b.drumCombo = combo; });
+          if (combo >= 3) {
+            showTeamBanner(`🥁 TRỐNG TỐT! (x${combo}) — Mở rộng vùng chèo!`);
+          }
+          pickNextPad();
+          refreshDrumUI(charge >= 100 ? '⚡ Đầy nhịp! Bấm XẢ TRỐNG!' : `Chuẩn nhịp! +15đ`, '#7ef9d4');
+        } else {
+          // Phạt nhẹ: giảm 2 combo, không khóa lâu
+          softLockUntil = now + 250;
+          combo = Math.max(0, combo - 2);
+          playDrumSound(80, 0.14, 'sawtooth', 0.22);
+          updateBoatState(state.assignedBoat, (b) => { b.drumCombo = combo; });
+          refreshDrumUI('Lệch mặt trống! -2 Combo', '#ff8278');
+        }
+      };
+    });
+
+    burstBtn.onclick = () => {
+      if (charge < 100) return;
+      charge = 0;
+      combo += 2;
+      playCheerSound();
+      spawnSplash(state.assignedBoat, 10, 0xffe38e);
+      addBoatProgress(state.assignedBoat, 3.2, 8);
+      addPersonalScore(25);
+      updateBoatState(state.assignedBoat, (b) => { b.drumCombo = combo; });
+      showTeamBanner(`⚡ XẢ TRỐNG! Combo x${combo} — Đội bứt tốc!`);
+      refreshDrumUI('Xả trống thành công! +25đ', '#7ef9d4');
+    };
   }
 
   // 3. ĐÁP HỘI: Ghép chữ + Ghép hình (phạt nhẹ khi chọn sai)
