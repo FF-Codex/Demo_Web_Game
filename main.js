@@ -29,13 +29,12 @@ const ROLE_NAMES = {
   saboteur: '💣 Kẻ Phá Đám'
 };
 
-// Ngắn gọn: Ai - Làm gì - Ảnh hưởng ai
 const ROLE_BRIEF = {
-  rower_left: '<b>Ai:</b> Chèo Trái · <b>Làm:</b> Chèo đúng nhịp & lệnh · <b>Ảnh hưởng:</b> Đẩy ghe, chèo đồng nhịp tạo sóng.',
-  rower_right: '<b>Ai:</b> Chèo Phải · <b>Làm:</b> Chèo đúng nhịp & lệnh · <b>Ảnh hưởng:</b> Đẩy ghe, chèo đồng nhịp tạo sóng.',
-  er: '<b>Ai:</b> Tay Trống · <b>Làm:</b> Gõ nhịp/dồn trống/ngân chiêng · <b>Ảnh hưởng:</b> Combo ≥ 3 mở rộng vùng chèo cho đội.',
-  scholar: '<b>Ai:</b> Đáp Hội · <b>Làm:</b> Ghép chữ hoặc đổi mảnh hình · <b>Ảnh hưởng:</b> Nạp Linh Khí cho cả ghe.',
-  saboteur: '<b>Ai:</b> Phá Đám · <b>Làm:</b> Giữ xoay hướng & thả ném Bèo · <b>Ảnh hưởng:</b> Làm chậm ghe địch hoặc buff Tù Và.'
+  rower_left: '<b>Ai:</b> Chèo Trái · <b>Làm:</b> Chèo đúng nhịp, lệnh & Bứt Tốc · <b>Ảnh hưởng:</b> Đẩy ghe, lướt sóng.',
+  rower_right: '<b>Ai:</b> Chèo Phải · <b>Làm:</b> Chèo đúng nhịp, lệnh & Bứt Tốc · <b>Ảnh hưởng:</b> Đẩy ghe, lướt sóng.',
+  drummer: '<b>Ai:</b> Tay Trống · <b>Làm:</b> Đánh trước khi đầy, spam Xả Trống, ngân tiếng · <b>Ảnh hưởng:</b> Combo ≥ 3 mở vùng chèo.',
+  scholar: '<b>Ai:</b> Đáp Hội · <b>Làm:</b> Ghép chữ, 3x3 & Cộng Hưởng Linh Khí · <b>Ảnh hưởng:</b> Nạp Linh Khí & dọn Bèo/tăng tốc.',
+  saboteur: '<b>Ai:</b> Phá Đám · <b>Làm:</b> Giữ xoay hướng ném Bèo đơn/chùm & Tù Và · <b>Ảnh hưởng:</b> Làm chậm địch hoặc buff đội.'
 };
 
 const state = {
@@ -45,9 +44,9 @@ const state = {
   assignedBoat: 0,
   assignedRole: 'rower_left',
   focusBoat: null,
-  camYaw: 0,      // Xoay 360° quanh ghe
-  camPitch: 0.42, // Độ cao góc nhìn
-  score: 0,       // Điểm đóng góp cá nhân
+  camYaw: 0,
+  camPitch: 0.42,
+  score: 0,
   players: {},
   lastThrowId: '',
   lastEventTime: 0,
@@ -97,35 +96,35 @@ function playCheerSound() {
   });
 }
 
-// ================= 3. MẶT NƯỚC & HOA VĂN TRỐNG ĐỒNG =================
-function createRiverTexture() {
+// ================= 3. MẶT NƯỚC ÊM DỊU & HOA VĂN TRỐNG ĐỒNG =================
+function createCalmRiverTexture() {
   const c = document.createElement('canvas');
   c.width = 512;
   c.height = 512;
   const ctx = c.getContext('2d');
 
   const grad = ctx.createLinearGradient(0, 0, 512, 0);
-  grad.addColorStop(0, '#105461');
-  grad.addColorStop(0.5, '#1d7a88');
-  grad.addColorStop(1, '#105461');
+  grad.addColorStop(0, '#135866');
+  grad.addColorStop(0.5, '#1c7685');
+  grad.addColorStop(1, '#135866');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 512, 512);
 
-  for (let y = 14; y < 512; y += 28) {
-    ctx.strokeStyle = y % 56 === 14 ? 'rgba(225, 252, 255, 0.28)' : 'rgba(255, 232, 163, 0.14)';
-    ctx.lineWidth = y % 56 === 14 ? 2.2 : 1.5;
+  ctx.strokeStyle = 'rgba(215, 248, 252, 0.14)';
+  ctx.lineWidth = 2;
+  for (let y = 48; y < 512; y += 64) {
     ctx.beginPath();
-    for (let x = 0; x <= 512; x += 16) {
-      const wy = y + Math.sin((x / 512) * Math.PI * 8 + y * 0.06) * 4.2;
+    for (let x = 0; x <= 512; x += 32) {
+      const wy = y + Math.sin((x / 512) * Math.PI * 4 + y * 0.02) * 3;
       if (x === 0) ctx.moveTo(x, wy);
       else ctx.lineTo(x, wy);
     }
     ctx.stroke();
   }
 
-  ctx.strokeStyle = 'rgba(255, 226, 138, 0.25)';
-  ctx.setLineDash([14, 14]);
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(255, 226, 138, 0.22)';
+  ctx.setLineDash([18, 22]);
+  ctx.lineWidth = 1.5;
   [128, 256, 384].forEach(lx => {
     ctx.beginPath();
     ctx.moveTo(lx, 0);
@@ -180,7 +179,7 @@ function createDongSonMedallionTexture() {
   return new THREE.CanvasTexture(c);
 }
 
-// ================= 4. CẢNH 3D, GHE NGO & QUỸ ĐẠO CHẤM ĐỎ =================
+// ================= 4. CẢNH 3D, ĐẦU/ĐUÔI GHE & QUỸ ĐẠO CHẤM ĐỎ =================
 const canvas = document.getElementById('game-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -202,10 +201,10 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-const riverTex = createRiverTexture();
+const riverTex = createCalmRiverTexture();
 const river = new THREE.Mesh(
   new THREE.PlaneGeometry(36, FINISH_LINE + 180),
-  new THREE.MeshStandardMaterial({ map: riverTex, roughness: 0.3, metalness: 0.25 })
+  new THREE.MeshStandardMaterial({ map: riverTex, roughness: 0.35, metalness: 0.2 })
 );
 river.rotation.x = -Math.PI / 2;
 river.position.z = -(FINISH_LINE + 180) / 2 + 35;
@@ -263,35 +262,60 @@ const boatObjects = boatColors.map((color, idx) => {
   const group = new THREE.Group();
 
   const hull = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.46, 0.8, 9.6, 8),
-    new THREE.MeshStandardMaterial({ color, metalness: 0.55, roughness: 0.24 })
+    new THREE.CylinderGeometry(0.45, 0.78, 9.4, 8),
+    new THREE.MeshStandardMaterial({ color, metalness: 0.5, roughness: 0.28 })
   );
   hull.rotation.x = Math.PI / 2;
-  hull.scale.set(1.14, 1, 0.66);
+  hull.scale.set(1.12, 1, 0.65);
   group.add(hull);
 
   const trim = new THREE.Mesh(
-    new THREE.BoxGeometry(1.12, 0.12, 9.1),
+    new THREE.BoxGeometry(1.12, 0.12, 9.0),
     new THREE.MeshStandardMaterial({ color: 0xffe699, metalness: 0.85, roughness: 0.2 })
   );
   trim.position.set(0, 0.36, 0);
   group.add(trim);
 
+  // ĐẦU THUYỀN (-Z): Mũi nhọn vươn cao + mũi giáo hướng tới + đèn vàng
   const bow = new THREE.Mesh(
-    new THREE.ConeGeometry(0.6, 2.5, 6),
-    new THREE.MeshStandardMaterial({ color: 0xffe699, metalness: 0.82, roughness: 0.2 })
+    new THREE.ConeGeometry(0.56, 2.7, 6),
+    new THREE.MeshStandardMaterial({ color: 0xffe699, metalness: 0.85, roughness: 0.2 })
   );
-  bow.position.set(0, 0.9, -5.0);
-  bow.rotation.x = -Math.PI / 3.6;
+  bow.position.set(0, 1.05, -5.2);
+  bow.rotation.x = -Math.PI / 3.2;
   group.add(bow);
 
-  const stern = new THREE.Mesh(
-    new THREE.ConeGeometry(0.48, 1.8, 6),
-    new THREE.MeshStandardMaterial({ color: 0xffe699, metalness: 0.8, roughness: 0.22 })
+  const bowSpear = new THREE.Mesh(
+    new THREE.ConeGeometry(0.16, 1.5, 5),
+    new THREE.MeshStandardMaterial({ color: 0xffd24c, emissive: 0xffaa00, emissiveIntensity: 0.45 })
   );
-  stern.position.set(0, 0.75, 4.8);
-  stern.rotation.x = Math.PI / 3.8;
+  bowSpear.position.set(0, 1.85, -6.1);
+  bowSpear.rotation.x = -Math.PI / 2.4;
+  group.add(bowSpear);
+
+  const bowMarker = new THREE.Mesh(
+    new THREE.SphereGeometry(0.24, 10, 10),
+    new THREE.MeshBasicMaterial({ color: 0xfff3a1 })
+  );
+  bowMarker.position.set(0, 1.35, -5.6);
+  group.add(bowMarker);
+
+  // ĐUÔI THUYỀN (+Z): Đuôi cong ngược + cờ đuôi phấp phới phía sau
+  const stern = new THREE.Mesh(
+    new THREE.ConeGeometry(0.42, 2.1, 6),
+    new THREE.MeshStandardMaterial({ color, metalness: 0.55, roughness: 0.3 })
+  );
+  stern.position.set(0, 1.25, 5.1);
+  stern.rotation.x = Math.PI / 4.2;
   group.add(stern);
+
+  const tailRibbon = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.75, 1.35),
+    new THREE.MeshStandardMaterial({ color: 0xff6b4a, side: THREE.DoubleSide })
+  );
+  tailRibbon.position.set(0, 1.75, 6.15);
+  tailRibbon.rotation.x = Math.PI / 3;
+  group.add(tailRibbon);
 
   const wake = new THREE.Mesh(
     new THREE.PlaneGeometry(2.4, 4.2),
@@ -354,10 +378,10 @@ const boatObjects = boatColors.map((color, idx) => {
 
   group.position.set((idx - 1.5) * LANE_SPACING, 0.35, 0);
   scene.add(group);
-  return { group, paddles, wake, boostAura, debuffCloud };
+  return { group, paddles, tailRibbon, wake, boostAura, debuffCloud };
 });
 
-// Dấu ném dạng chấm đỏ cong 3D tới vùng ném của Kẻ Phá Đám
+// Quỹ đạo chấm đỏ cong 3D tới vùng ném của Kẻ Phá Đám
 const ARC_DOT_COUNT = 18;
 const arcDots = [];
 const dotGeo = new THREE.SphereGeometry(0.18, 8, 8);
@@ -379,8 +403,9 @@ scene.add(landingMarker);
 
 const aimState = {
   active: false,
-  yawOffset: 0, // Người chơi giữ để xoay hướng ném tự do
-  range: 14,    // Tầm xa ném điều chỉnh theo giữ
+  cluster: false,
+  yawOffset: 0,
+  range: 15,
   landPoint: new THREE.Vector3()
 };
 
@@ -409,14 +434,15 @@ function updateAimArc(boatIdx) {
     d.visible = true;
     d.position.lerpVectors(start, end, t);
     d.position.y += Math.sin(t * Math.PI) * peakHeight;
-    const sc = 0.65 + t * 0.55;
+    const sc = (0.65 + t * 0.55) * (aimState.cluster ? 1.2 : 1);
     d.scale.set(sc, sc, sc);
   }
+  const ringScale = aimState.cluster ? 1.85 : 1.0;
   landingMarker.visible = true;
+  landingMarker.scale.set(ringScale, ringScale, 1);
   landingMarker.position.set(end.x, 0.08, end.z);
 }
 
-// Hạt bọt nước
 const splashes = [];
 function spawnSplash(boatIdx, count = 6, colorHex = 0xe8fbff) {
   const origin = boatObjects[boatIdx].group.position;
@@ -441,17 +467,17 @@ function spawnSplash(boatIdx, count = 6, colorHex = 0xe8fbff) {
   }
 }
 
-// Bèo Tây bay theo quỹ đạo tới đúng điểm ngắm (có kiểm tra trúng ghe nào không)
 const projectiles = [];
-function spawn3DProjectileFromTo(fromBoatIdx, endPos, hitBoatIdx) {
+function spawn3DProjectileFromTo(fromBoatIdx, endPos, hitBoatIdx, isCluster = false) {
   const startPos = boatObjects[fromBoatIdx].group.position.clone();
   startPos.y = 1.2;
   const hyacinthGroup = new THREE.Group();
   const leafMat = new THREE.MeshStandardMaterial({ color: 0x2ecc71, emissive: hitBoatIdx !== null ? 0x1e8449 : 0x4d5656, emissiveIntensity: 0.45 });
-  for (let k = 0; k < 4; k++) {
-    const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.34, 8, 6), leafMat);
+  const count = isCluster ? 7 : 4;
+  for (let k = 0; k < count; k++) {
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(isCluster ? 0.38 : 0.32, 8, 6), leafMat);
     leaf.scale.set(1.2, 0.55, 1.2);
-    leaf.position.set(Math.cos(k * 1.57) * 0.25, Math.sin(k) * 0.1, Math.sin(k * 1.57) * 0.25);
+    leaf.position.set(Math.cos(k * 1.1) * (isCluster ? 0.45 : 0.25), Math.sin(k) * 0.12, Math.sin(k * 1.1) * (isCluster ? 0.45 : 0.25));
     hyacinthGroup.add(leaf);
   }
   hyacinthGroup.position.copy(startPos);
@@ -462,8 +488,7 @@ function spawn3DProjectileFromTo(fromBoatIdx, endPos, hitBoatIdx) {
     start: startPos,
     end: endPos.clone().setY(0.35),
     peak: 4.2 + dist * 0.14,
-    t: 0,
-    hitBoatIdx
+    t: 0
   });
 }
 
@@ -586,7 +611,7 @@ function setupFirebaseListeners() {
     if (room.lastThrow && room.lastThrow.id !== state.lastThrowId) {
       state.lastThrowId = room.lastThrow.id;
       const endV = new THREE.Vector3(room.lastThrow.endX, 0.35, room.lastThrow.endZ);
-      spawn3DProjectileFromTo(room.lastThrow.from, endV, room.lastThrow.hitBoatIdx ?? null);
+      spawn3DProjectileFromTo(room.lastThrow.from, endV, room.lastThrow.hitBoatIdx ?? null, !!room.lastThrow.cluster);
     }
 
     if (room.lastEvent && room.lastEvent.time !== state.lastEventTime && Date.now() - room.lastEvent.time < 3200) {
@@ -806,7 +831,6 @@ canvas.addEventListener('pointermove', (e) => {
   lastPointerX = e.clientX;
   lastPointerY = e.clientY;
 
-  // Xoay 360° không giới hạn vòng
   state.camYaw = (state.camYaw - dx * 0.008) % (Math.PI * 2);
   state.camPitch = Math.max(0.18, Math.min(1.05, state.camPitch + dy * 0.003));
   document.querySelectorAll('.cam-btn').forEach(b => b.classList.remove('active'));
@@ -821,7 +845,7 @@ const stopDragCam = (e) => {
 canvas.addEventListener('pointerup', stopDragCam);
 canvas.addEventListener('pointercancel', stopDragCam);
 
-// ================= 8. GAMEPLAY TỪNG VAI TRÒ + PHẠT KHI LÀM ĐẠI =================
+// ================= 8. GAMEPLAY TỪNG VAI TRÒ =================
 let activeMiniLoop = null;
 
 function renderRoleControls() {
@@ -829,7 +853,7 @@ function renderRoleControls() {
   const panel = document.getElementById('role-panel');
   const role = state.assignedRole;
 
-  // 1. 2 TAY CHÈO: Phạt spam & trật nhịp (không cộng tiến độ/điểm, khóa ngắn, reset chuỗi)
+  // 1. 2 TAY CHÈO: Nhịp chuẩn + Bứt Tốc sau chuỗi 4 nhịp + phạt trật nhịp/spam
   if (role === 'rower_left' || role === 'rower_right') {
     const symbols = ['☀️ MẶT TRỜI', '🦅 CHIM LẠC'];
     let targetSym = symbols[0];
@@ -837,6 +861,8 @@ function renderRoleControls() {
     let lastTapTime = 0;
     let lockedUntil = 0;
     let streak = 0;
+    let sprintReady = false;
+    let sprintEndAt = 0;
 
     panel.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
@@ -851,8 +877,11 @@ function renderRoleControls() {
       <div class="btn-group">
         <button id="btn-sun" class="row-act">☀️ MẶT TRỜI</button>
         <button id="btn-bird" class="row-act">🦅 CHIM LẠC</button>
+        <button id="btn-sprint" class="secondary" disabled style="max-width:96px;">🔥 BỨT TỐC</button>
       </div>
     `;
+
+    const sprintBtn = document.getElementById('btn-sprint');
 
     activeMiniLoop = setInterval(() => {
       const now = Date.now();
@@ -864,17 +893,31 @@ function renderRoleControls() {
         zoneEl.style.width = hasDrumBuff ? '40%' : '24%';
       }
 
-      pos += dir * 4.1;
+      const speedMult = now < sprintEndAt ? 1.45 : 1.0;
+      pos += dir * 4.1 * speedMult;
       if (pos >= 94 || pos <= 0) dir *= -1;
       const cur = document.getElementById('swing-cursor');
       if (cur) cur.style.left = pos + '%';
 
       const isLocked = now < lockedUntil;
       document.querySelectorAll('.row-act').forEach(b => { b.disabled = isLocked; });
+      if (sprintBtn) sprintBtn.disabled = !sprintReady || now < sprintEndAt;
     }, 25);
+
+    sprintBtn.onclick = () => {
+      if (!sprintReady) return;
+      sprintReady = false;
+      sprintEndAt = Date.now() + 2200;
+      playCheerSound();
+      spawnSplash(state.assignedBoat, 10, 0xffe38e);
+      addBoatProgress(state.assignedBoat, 4.2, 5);
+      addPersonalScore(30);
+      showTeamBanner('🔥 BỨT TỐC CHÈO! +30đ', 1500);
+    };
 
     const penalizeRow = (msg, lockMs = 550) => {
       streak = 0;
+      sprintReady = false;
       lockedUntil = Date.now() + lockMs;
       playDrumSound(75, 0.16, 'sawtooth', 0.25);
       if (navigator.vibrate) navigator.vibrate([35, 30, 35]);
@@ -887,8 +930,6 @@ function renderRoleControls() {
     const handleRow = (chosen) => {
       const now = Date.now();
       if (now < lockedUntil) return;
-
-      // Chống spam bấm liên tục quá nhanh (< 240ms)
       if (now - lastTapTime < 240) {
         penalizeRow('SPAM! Hụt nước', 650);
         return;
@@ -905,20 +946,22 @@ function renderRoleControls() {
       }
 
       streak++;
+      if (streak >= 4 && !sprintReady) sprintReady = true;
       const sk = document.getElementById('row-streak');
       if (sk) sk.innerText = String(streak);
       const st = document.getElementById('row-status');
 
+      const sprintBonus = now < sprintEndAt ? 1.35 : 1.0;
       if (inSweetSpot && rightSym) {
         playCheerSound();
         spawnSplash(state.assignedBoat, 9, 0xffffff);
-        addBoatProgress(state.assignedBoat, 3.4, 2);
+        addBoatProgress(state.assignedBoat, 3.4 * sprintBonus, 2);
         addPersonalScore(25);
-        if (st) { st.style.color = '#7ef9d4'; st.innerText = 'CHUẨN NHỊP! +25đ'; }
+        if (st) { st.style.color = '#7ef9d4'; st.innerText = sprintReady ? 'MỞ BỨT TỐC! +25đ' : 'CHUẨN NHỊP! +25đ'; }
       } else {
         playDrumSound(150, 0.13);
         spawnSplash(state.assignedBoat, 4, 0xc9f6fa);
-        addBoatProgress(state.assignedBoat, 1.5, 1);
+        addBoatProgress(state.assignedBoat, 1.5 * sprintBonus, 1);
         addPersonalScore(10);
         if (st) { st.style.color = '#ffe38e'; st.innerText = 'ĐƯỢC! +10đ'; }
       }
@@ -932,177 +975,299 @@ function renderRoleControls() {
     document.getElementById('btn-bird').onclick = () => handleRow('🦅 CHIM LẠC');
   }
 
-  // 2. TAY TRỐNG: Gõ mặt trống sáng nối Combo + Xả Trống khi đầy thanh nhịp
+  // 2. TAY TRỐNG: Đánh trước khi đầy thanh (< 85%) + Spam Xả Trống tăng cấp + Nhấn giữ ngân tiếng
   else if (role === 'drummer') {
     let combo = 0;
-    let charge = 0;
+    let dischargeTier = 0;
+    let mode = 'beat';
     let targetPad = 0;
-    let lastHitTime = 0;
+    let beatPct = 0;
+    let burstCharge = 0;
+    let holdPower = 0;
+    let isHolding = false;
     let softLockUntil = 0;
+    let lastHitTime = 0;
 
     const padNames = ['🥁 TRỐNG CÁI', '🪘 TRỐNG CON', '🔔 CHIÊNG ĐỒNG'];
     const padFreqs = [95, 160, 330];
 
-    panel.innerHTML = `
-      <div style="display:flex; justify-content:space-between; font-size:12px;">
-        <strong>${ROLE_NAMES[role]} · Combo: <span id="drum-combo">0</span></strong>
-        <span id="drum-msg" style="color:#ffe38e;">Gõ nút sáng · Đầy thanh thì XẢ TRỐNG</span>
-      </div>
-      <div style="width:100%; height:14px; background:#0e1f23; border:1px solid #e6be52; border-radius:7px; overflow:hidden; margin:5px 0;">
-        <div id="drum-charge-bar" style="width:0%; height:100%; background:linear-gradient(90deg,#e6be52,#ffe38e); transition:width 0.1s;"></div>
-      </div>
-      <div class="btn-group">
-        ${[0, 1, 2].map(i => `
-          <button class="d-pad" data-i="${i}">${padNames[i]}</button>
-        `).join('')}
-        <button id="burst-drum-btn" class="secondary" disabled style="min-width:92px;">⚡ XẢ TRỐNG</button>
-      </div>
-    `;
-
-    const pads = document.querySelectorAll('.d-pad');
-    const burstBtn = document.getElementById('burst-drum-btn');
-    const msgEl = document.getElementById('drum-msg');
-    const comboEl = document.getElementById('drum-combo');
-    const barEl = document.getElementById('drum-charge-bar');
-
-    const pickNextPad = () => {
-      let next = Math.floor(Math.random() * 3);
-      if (next === targetPad) next = (next + 1) % 3;
-      targetPad = next;
-      pads.forEach((b, i) => {
-        b.style.background = i === targetPad ? '#ffe38e' : '#234249';
-        b.style.color = i === targetPad ? '#102024' : '#f8eed8';
-      });
-    };
-
-    const refreshDrumUI = (statusText, color = '#ffe38e') => {
-      if (comboEl) comboEl.innerText = String(combo);
-      if (barEl) barEl.style.width = `${Math.min(100, charge)}%`;
-      if (burstBtn) burstBtn.disabled = charge < 100;
-      if (msgEl && statusText) {
-        msgEl.innerText = statusText;
-        msgEl.style.color = color;
+    const pickNextMode = (nextMode = null) => {
+      let nextPad = Math.floor(Math.random() * 3);
+      if (nextPad === targetPad) nextPad = (nextPad + 1) % 3;
+      targetPad = nextPad;
+      beatPct = 0;
+      burstCharge = 0;
+      holdPower = 0;
+      isHolding = false;
+      if (nextMode) {
+        mode = nextMode;
+      } else {
+        const r = Math.random();
+        mode = r < 0.4 ? 'beat' : r < 0.72 ? 'burst_discharge' : 'hold';
       }
+      drawDrumUI();
     };
 
-    pickNextPad();
+    const penalizeDrum = (msg, resetDischargeTier = false) => {
+      combo = 0;
+      if (resetDischargeTier) dischargeTier = 0;
+      softLockUntil = Date.now() + 320;
+      playDrumSound(75, 0.15, 'sawtooth', 0.24);
+      updateBoatState(state.assignedBoat, (b) => { b.drumCombo = 0; });
+      const cEl = document.getElementById('drum-combo');
+      if (cEl) cEl.innerText = '0';
+      const mEl = document.getElementById('drum-msg');
+      if (mEl) { mEl.style.color = '#ff8278'; mEl.innerText = msg; }
+    };
 
-    pads.forEach(btn => {
-      btn.onclick = () => {
-        const now = Date.now();
-        if (now < softLockUntil) return;
+    const rewardBeatOrHold = (pts, deltaProg, label) => {
+      combo++;
+      addPersonalScore(pts);
+      addBoatProgress(state.assignedBoat, deltaProg, 3);
+      spawnSplash(state.assignedBoat, 6, 0xffe38e);
+      updateBoatState(state.assignedBoat, (b) => { b.drumCombo = combo; });
+      if (combo >= 3) showTeamBanner(`🥁 TRỐNG TỐT! (x${combo}) — Mở vùng chèo!`);
+      const cEl = document.getElementById('drum-combo');
+      if (cEl) cEl.innerText = String(combo);
+      const mEl = document.getElementById('drum-msg');
+      if (mEl) { mEl.style.color = '#7ef9d4'; mEl.innerText = `${label} +${pts}đ`; }
+      pickNextMode();
+    };
 
+    const triggerDischarge = () => {
+      dischargeTier++;
+      combo += 2;
+      const mult = 1 + (dischargeTier - 1) * 0.35;
+      const pts = Math.round(25 * mult);
+      const deltaProg = Number((2.8 * mult).toFixed(2));
+      const manaGain = Math.min(18, 6 + dischargeTier * 3);
+
+      playCheerSound();
+      spawnSplash(state.assignedBoat, 10 + Math.min(10, dischargeTier * 2), 0xffe38e);
+      addBoatProgress(state.assignedBoat, deltaProg, manaGain);
+      addPersonalScore(pts);
+      updateBoatState(state.assignedBoat, (b) => { b.drumCombo = combo; });
+      showTeamBanner(`⚡ XẢ TRỐNG CẤP ${dischargeTier}! +${deltaProg}m · +${pts}đ`);
+
+      burstCharge = 0;
+      targetPad = (targetPad + 1) % 3;
+      drawDrumUI(`⚡ Xả Cấp ${dischargeTier}! Spam tiếp lên Cấp ${dischargeTier + 1}!`, '#7ef9d4');
+    };
+
+    const drawDrumUI = (customMsg = '', customColor = '#ffe38e') => {
+      let title = '';
+      if (mode === 'beat') title = `NHỊP TRƯỚC ĐẦY: Bấm ${padNames[targetPad]} khi < 85%`;
+      else if (mode === 'burst_discharge') title = `SPAM XẢ TRỐNG (Cấp ${dischargeTier + 1}): Gõ dồn ${padNames[targetPad]} tới 100%`;
+      else title = `NGÂN TIẾNG: Giữ ${padNames[targetPad]} tới vùng vàng rồi thả`;
+
+      panel.innerHTML = `
+        <div style="display:flex; justify-content:space-between; font-size:12px;">
+          <strong>${ROLE_NAMES[role]} · Combo: <span id="drum-combo">${combo}</span> · Xả: Cấp ${dischargeTier}</strong>
+          <span id="drum-msg" style="color:${customColor};">${customMsg || title}</span>
+        </div>
+        <div style="width:100%; height:14px; background:#0e1f23; border:1px solid #e6be52; border-radius:7px; overflow:hidden; position:relative; margin:5px 0;">
+          ${mode === 'beat' ? '<div style="position:absolute; left:0%; width:85%; height:100%; background:rgba(46,204,113,0.28);"></div>' : ''}
+          ${mode === 'hold' ? '<div style="position:absolute; left:55%; width:25%; height:100%; background:rgba(46,204,113,0.55);"></div>' : ''}
+          <div id="drum-meter" style="width:0%; height:100%; background:linear-gradient(90deg,#e6be52,#ffe38e); transition:width 0.06s;"></div>
+        </div>
+        <div class="btn-group">
+          ${[0, 1, 2].map(i => `
+            <button class="d-pad" data-i="${i}" style="background:${i === targetPad ? '#ffe38e' : '#234249'}; color:${i === targetPad ? '#102024' : '#f8eed8'};">
+              ${padNames[i]}
+            </button>
+          `).join('')}
+          ${mode === 'burst_discharge' ? '<button id="switch-drum-mode" class="secondary" style="max-width:86px;">ĐỔI NHỊP</button>' : ''}
+        </div>
+      `;
+
+      const swBtn = document.getElementById('switch-drum-mode');
+      if (swBtn) swBtn.onclick = () => pickNextMode('beat');
+
+      document.querySelectorAll('.d-pad').forEach(btn => {
         const idx = Number(btn.dataset.i);
         const freq = padFreqs[idx];
 
-        // Chống spam bấm liên tục quá nhanh (< 140ms)
-        if (now - lastHitTime < 140) {
-          softLockUntil = now + 260;
-          combo = Math.max(0, combo - 1);
-          playDrumSound(75, 0.12, 'sawtooth', 0.2);
-          updateBoatState(state.assignedBoat, (b) => { b.drumCombo = combo; });
-          refreshDrumUI('Gõ quá nhanh! -1 Combo', '#ff8278');
-          return;
-        }
-        lastHitTime = now;
-
-        if (idx === targetPad) {
-          combo++;
-          charge = Math.min(100, charge + 25);
-          playDrumSound(freq, 0.16);
-          if (navigator.vibrate) navigator.vibrate(20);
-          spawnSplash(state.assignedBoat, 5, 0xffe38e);
-          addBoatProgress(state.assignedBoat, 1.35 * Math.min(2.2, 1 + combo * 0.08), 2);
-          addPersonalScore(15);
-
-          updateBoatState(state.assignedBoat, (b) => { b.drumCombo = combo; });
-          if (combo >= 3) {
-            showTeamBanner(`🥁 TRỐNG TỐT! (x${combo}) — Mở rộng vùng chèo!`);
-          }
-          pickNextPad();
-          refreshDrumUI(charge >= 100 ? '⚡ Đầy nhịp! Bấm XẢ TRỐNG!' : `Chuẩn nhịp! +15đ`, '#7ef9d4');
+        if (mode === 'hold' && idx === targetPad) {
+          btn.onpointerdown = () => {
+            if (Date.now() < softLockUntil) return;
+            isHolding = true;
+            holdPower = 0;
+            playDrumSound(freq, 0.25, 'triangle', 0.3);
+          };
+          btn.onpointerup = () => {
+            if (!isHolding) return;
+            isHolding = false;
+            if (holdPower >= 55 && holdPower <= 82) {
+              playCheerSound();
+              rewardBeatOrHold(24, 2.6, 'NGÂN CHUẨN!');
+            } else {
+              penalizeDrum('NGÂN LỆCH NHỊP!');
+            }
+          };
         } else {
-          // Phạt nhẹ: giảm 2 combo, không khóa lâu
-          softLockUntil = now + 250;
-          combo = Math.max(0, combo - 2);
-          playDrumSound(80, 0.14, 'sawtooth', 0.22);
-          updateBoatState(state.assignedBoat, (b) => { b.drumCombo = combo; });
-          refreshDrumUI('Lệch mặt trống! -2 Combo', '#ff8278');
-        }
-      };
-    });
+          btn.onclick = () => {
+            const now = Date.now();
+            if (now < softLockUntil) return;
+            const minGap = mode === 'burst_discharge' ? 65 : 140;
+            if (now - lastHitTime < minGap) {
+              penalizeDrum('GÕ QUÁ NHANH!', mode === 'burst_discharge');
+              return;
+            }
+            lastHitTime = now;
+            playDrumSound(freq, 0.14);
 
-    burstBtn.onclick = () => {
-      if (charge < 100) return;
-      charge = 0;
-      combo += 2;
-      playCheerSound();
-      spawnSplash(state.assignedBoat, 10, 0xffe38e);
-      addBoatProgress(state.assignedBoat, 3.2, 8);
-      addPersonalScore(25);
-      updateBoatState(state.assignedBoat, (b) => { b.drumCombo = combo; });
-      showTeamBanner(`⚡ XẢ TRỐNG! Combo x${combo} — Đội bứt tốc!`);
-      refreshDrumUI('Xả trống thành công! +25đ', '#7ef9d4');
+            if (idx !== targetPad) {
+              penalizeDrum('SAI MẶT TRỐNG!', mode === 'burst_discharge');
+              return;
+            }
+
+            if (mode === 'beat') {
+              if (beatPct >= 20 && beatPct < 85) {
+                const bonus = beatPct >= 55 ? 22 : 16;
+                const prog = beatPct >= 55 ? 2.4 : 1.7;
+                rewardBeatOrHold(bonus, prog, 'ĐÁNH TRƯỚC ĐẦY CHUẨN!');
+              } else if (beatPct < 20) {
+                penalizeDrum('CHƯA TỚI NHỊP!');
+              } else {
+                penalizeDrum('THANH ĐÃ ĐẦY — TRỄ NHỊP!');
+              }
+            } else if (mode === 'burst_discharge') {
+              burstCharge = Math.min(100, burstCharge + 18);
+              const meter = document.getElementById('drum-meter');
+              if (meter) meter.style.width = burstCharge + '%';
+              spawnSplash(state.assignedBoat, 3, 0xffe38e);
+              if (burstCharge >= 100) triggerDischarge();
+            } else if (mode === 'hold') {
+              penalizeDrum('HÃY NHẤN GIỮ NÚT!');
+            }
+          };
+        }
+      });
     };
+
+    drawDrumUI();
+
+    activeMiniLoop = setInterval(() => {
+      const now = Date.now();
+      const meter = document.getElementById('drum-meter');
+      const isLocked = now < softLockUntil;
+      document.querySelectorAll('.d-pad').forEach(b => { b.disabled = isLocked; });
+
+      if (mode === 'beat') {
+        beatPct += 2.2;
+        if (meter) meter.style.width = Math.min(100, beatPct) + '%';
+        if (beatPct >= 100) {
+          penalizeDrum('THANH ĐÃ ĐẦY — QUÁ NHỊP!');
+          pickNextMode();
+        }
+      } else if (mode === 'burst_discharge') {
+        if (!isLocked && burstCharge > 0 && now - lastHitTime > 450) {
+          burstCharge = Math.max(0, burstCharge - 3.5);
+          if (meter) meter.style.width = burstCharge + '%';
+        }
+      } else if (mode === 'hold') {
+        if (isHolding) {
+          holdPower = Math.min(100, holdPower + 2.5);
+          if (meter) meter.style.width = holdPower + '%';
+          if (holdPower >= 100) {
+            isHolding = false;
+            penalizeDrum('NGÂN QUÁ LỐ!');
+          }
+        }
+      }
+    }, 30);
   }
 
-  // 3. ĐÁP HỘI: Ghép chữ + Ghép hình (phạt nhẹ khi chọn sai)
+  // 3. ĐÁP HỘI: Ghép chữ nhiều chủ đề + Ghép hình 3x3 đổi ô/xoay 90° + Cộng Hưởng Linh Khí
   else if (role === 'scholar') {
     let mode = 'word';
     let lockedUntil = 0;
-    const bank = [
-      { hint: 'Văn hóa Việt cổ', word: 'TRỐNG ĐỒNG' },
-      { hint: 'Chim khắc trên trống', word: 'CHIM LẠC' },
-      { hint: 'Sức mạnh chiến thắng', word: 'ĐOÀN KẾT' },
-      { hint: 'Đua thuyền Nam Bộ', word: 'GHE NGO' },
-      { hint: 'Con cháu Rồng Tiên', word: 'LẠC HỒNG' }
+    let streak = 0;
+
+    const wordBank = [
+      { topic: 'Địa lý', hint: 'Sông lớn bồi đắp đồng bằng phía Nam', word: 'MÊ KÔNG' },
+      { topic: 'Lễ hội', hint: 'Tỉnh nổi tiếng lễ hội đua ghe Ngo', word: 'SÓC TRĂNG' },
+      { topic: 'Văn hóa', hint: 'Cổ vật đồng thau biểu tượng Việt cổ', word: 'TRỐNG ĐỒNG' },
+      { topic: 'Họa tiết', hint: 'Loài chim bay khắc trên mặt trống cổ', word: 'CHIM LẠC' },
+      { topic: 'Lịch sử', hint: 'Nền văn hóa đồng thau ven sông Hồng', word: 'ĐÔNG SƠN' },
+      { topic: 'Nhạc cụ', hint: 'Thanh âm vang dội thúc giục tay chèo', word: 'CHIÊNG ĐỒNG' },
+      { topic: 'Tinh thần', hint: 'Sức mạnh đồng tâm trên ghe', word: 'ĐOÀN KẾT' },
+      { topic: 'Cội nguồn', hint: 'Danh xưng con cháu Rồng Tiên', word: 'LẠC HỒNG' }
     ];
 
+    const attachResonanceBtn = () => {
+      const resBtn = document.getElementById('btn-resonance');
+      if (!resBtn) return;
+      const myMana = state.boats[state.assignedBoat]?.mana || 0;
+      resBtn.disabled = myMana < 80;
+      resBtn.onclick = () => {
+        if ((state.boats[state.assignedBoat]?.mana || 0) < 80) return;
+        playCheerSound();
+        spawnSplash(state.assignedBoat, 10, 0x7ef9d4);
+        addPersonalScore(35);
+        updateBoatState(state.assignedBoat, (b) => {
+          b.mana = Math.max(0, (b.mana || 0) - 80);
+          b.debuffUntil = 0; // Xóa hiệu ứng Bèo Tây đang kẹt
+          b.progress = (b.progress || 0) + 5.0;
+        });
+        showTeamBanner('✨ CỘNG HƯỞNG LINH KHÍ! Xóa kẹt & +5m · +35đ');
+      };
+    };
+
     const renderWordGame = () => {
-      const current = bank[Math.floor(Math.random() * bank.length)];
+      const current = wordBank[Math.floor(Math.random() * wordBank.length)];
       const cleanChars = current.word.replace(/\s+/g, '').split('');
       let shuffled = [...cleanChars].sort(() => Math.random() - 0.5);
+      if (shuffled.join('') === cleanChars.join('') && cleanChars.length > 1) shuffled.reverse();
       let picked = [];
 
       const draw = () => {
+        const mult = 1 + Math.min(3, streak) * 0.2;
+        const pts = Math.round(35 * mult);
         panel.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <strong style="font-size:12.5px;">${ROLE_NAMES[role]} · Chữ (+35đ / +25 Linh khí)</strong>
-            <button id="sw-puz" class="secondary" style="width:auto; margin:0; padding:3px 7px; font-size:10.5px;">🧩 Ghép Hình</button>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:4px;">
+            <strong style="font-size:12px;">📜 [${current.topic}] Chuỗi x${streak + 1} (+${pts}đ)</strong>
+            <div style="display:flex; gap:4px;">
+              <button id="btn-resonance" class="secondary" style="width:auto; margin:0; padding:2px 6px; font-size:10px;">✨ Cộng Hưởng (80LK)</button>
+              <button id="sw-puz" class="secondary" style="width:auto; margin:0; padding:2px 6px; font-size:10px;">🧩 3x3</button>
+            </div>
           </div>
-          <div style="font-size:11.5px; color:#ffe38e; margin:2px 0;">${current.hint} · <b>${picked.join(' ') || '_ _ _ _'}</b></div>
+          <div style="font-size:11px; color:#ffe38e; margin:2px 0;">
+            ${current.hint} · <b style="letter-spacing:1.5px; color:#fff;">${picked.join('') || '_'.repeat(cleanChars.length)}</b>
+          </div>
           <div style="display:flex; flex-wrap:wrap; gap:4px; justify-content:center;">
-            ${shuffled.map((ch, i) => `<button class="char-tile" data-i="${i}" style="width:34px; padding:6px 0; margin:0; font-size:12.5px;">${ch}</button>`).join('')}
-            <button id="clr-tile" class="secondary" style="width:46px; padding:6px 0; margin:0; font-size:11px;">XÓA</button>
+            ${shuffled.map((ch, i) => `<button class="char-tile" data-i="${i}" style="width:32px; padding:5px 0; margin:0; font-size:12px;">${ch}</button>`).join('')}
+            <button id="clr-tile" class="secondary" style="width:42px; padding:5px 0; margin:0; font-size:10.5px;">XÓA</button>
           </div>
         `;
+        attachResonanceBtn();
         document.getElementById('sw-puz').onclick = () => { mode = 'puzzle'; renderPuzzleGame(); };
         document.querySelectorAll('.char-tile').forEach(btn => {
           btn.onclick = () => {
             if (Date.now() < lockedUntil) return;
             const i = Number(btn.dataset.i);
             if (!shuffled[i]) return;
-            playDrumSound(220 + picked.length * 25, 0.08);
+            playDrumSound(220 + picked.length * 24, 0.08);
             picked.push(shuffled[i]);
             shuffled[i] = '';
 
-            // Kiểm tra ngay chữ cái vừa chọn có đúng vị trí từ khóa không
-            const expectedChar = cleanChars[picked.length - 1];
-            if (picked[picked.length - 1] !== expectedChar) {
+            if (picked[picked.length - 1] !== cleanChars[picked.length - 1]) {
+              streak = 0;
               lockedUntil = Date.now() + 500;
               playDrumSound(80, 0.15, 'sawtooth', 0.22);
               shuffled = [...cleanChars].sort(() => Math.random() - 0.5);
               picked = [];
-              showTeamBanner('❌ Sai chữ! Làm lại từ đầu', 1300);
+              showTeamBanner('❌ Sai chữ! Reset chuỗi', 1300);
               draw();
               return;
             }
 
             if (picked.join('') === cleanChars.join('')) {
+              streak++;
               playCheerSound();
               spawnSplash(state.assignedBoat, 8, 0x7ef9d4);
               addBoatProgress(state.assignedBoat, 2.5, 25);
-              addPersonalScore(35);
+              addPersonalScore(pts);
               renderWordGame();
             } else {
               draw();
@@ -1119,51 +1284,71 @@ function renderRoleControls() {
     };
 
     const renderPuzzleGame = () => {
-      const solved = ['☀️', '🦅', '🥁', '🌊'];
-      let tiles = [...solved].sort(() => Math.random() - 0.5);
-      if (tiles.join('') === solved.join('')) tiles.reverse();
+      const goalGrid = [
+        { sym: '☀️', rot: 0 }, { sym: '☀️', rot: 0 }, { sym: '☀️', rot: 0 },
+        { sym: '🦅', rot: 1 }, { sym: '🦅', rot: 1 }, { sym: '🦅', rot: 1 },
+        { sym: '🥁', rot: 2 }, { sym: '🥁', rot: 2 }, { sym: '🥁', rot: 2 }
+      ];
+      let grid = goalGrid.map(item => ({ sym: item.sym, rot: Math.floor(Math.random() * 4) }));
+      grid.sort(() => Math.random() - 0.5);
+
       let selectedIdx = null;
+      let actionMode = 'swap';
+      const isSolved = () => grid.every((cell, idx) => cell.sym === goalGrid[idx].sym && cell.rot === goalGrid[idx].rot);
 
       const drawPuzzle = () => {
         panel.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <strong style="font-size:12.5px;">${ROLE_NAMES[role]} · Ghép ☀️🦅🥁🌊 (+45đ / +35 Linh khí)</strong>
-            <button id="sw-word" class="secondary" style="width:auto; margin:0; padding:3px 7px; font-size:10.5px;">📜 Ghép Chữ</button>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:4px;">
+            <strong style="font-size:11px;">🧩 3x3: H1☀️(↑) · H2🦅(→) · H3🥁(↓) (+50đ)</strong>
+            <div style="display:flex; gap:3px;">
+              <button id="mode-swap" class="${actionMode === 'swap' ? '' : 'secondary'}" style="width:auto; margin:0; padding:2px 5px; font-size:10px;">Đổi</button>
+              <button id="mode-rot" class="${actionMode === 'rotate' ? '' : 'secondary'}" style="width:auto; margin:0; padding:2px 5px; font-size:10px;">Xoay</button>
+              <button id="btn-resonance" class="secondary" style="width:auto; margin:0; padding:2px 5px; font-size:10px;">✨80LK</button>
+              <button id="sw-word" class="secondary" style="width:auto; margin:0; padding:2px 5px; font-size:10px;">📜Chữ</button>
+            </div>
           </div>
-          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:5px; margin-top:5px;">
-            ${tiles.map((t, i) => `
-              <button class="puz-btn" data-i="${i}" style="margin:0; padding:8px 0; font-size:16px; background:${selectedIdx === i ? '#ffe38e' : '#234249'}; color:#102024;">
-                ${t}
-              </button>
-            `).join('')}
+          <div style="display:grid; grid-template-columns:repeat(9, 1fr); gap:4px; margin-top:4px;">
+            ${grid.map((cell, i) => {
+              const deg = cell.rot * 90;
+              const ok = cell.sym === goalGrid[i].sym && cell.rot === goalGrid[i].rot;
+              return `
+                <button class="puz9-btn" data-i="${i}" style="margin:0; padding:5px 0; font-size:13px; border-color:${ok ? '#2ecc71' : (selectedIdx === i ? '#fff' : '#e6be52')}; background:${selectedIdx === i ? '#ffe38e' : '#1b353b'}; color:#fff;">
+                  <span style="display:inline-block; transform:rotate(${deg}deg); transition:transform 0.12s;">${cell.sym}</span>
+                </button>
+              `;
+            }).join('')}
           </div>
         `;
+        attachResonanceBtn();
         document.getElementById('sw-word').onclick = () => { mode = 'word'; renderWordGame(); };
-        document.querySelectorAll('.puz-btn').forEach(btn => {
+        document.getElementById('mode-swap').onclick = () => { actionMode = 'swap'; selectedIdx = null; drawPuzzle(); };
+        document.getElementById('mode-rot').onclick = () => { actionMode = 'rotate'; selectedIdx = null; drawPuzzle(); };
+
+        document.querySelectorAll('.puz9-btn').forEach(btn => {
           btn.onclick = () => {
             if (Date.now() < lockedUntil) return;
             const idx = Number(btn.dataset.i);
-            playDrumSound(260, 0.08);
-            if (selectedIdx === null) {
-              selectedIdx = idx;
-              drawPuzzle();
-            } else if (selectedIdx === idx) {
-              selectedIdx = null;
-              drawPuzzle();
+            playDrumSound(250, 0.08);
+            if (actionMode === 'rotate') {
+              grid[idx].rot = (grid[idx].rot + 1) % 4;
             } else {
-              const tmp = tiles[selectedIdx];
-              tiles[selectedIdx] = tiles[idx];
-              tiles[idx] = tmp;
-              selectedIdx = null;
-              if (tiles.join('') === solved.join('')) {
-                playCheerSound();
-                spawnSplash(state.assignedBoat, 10, 0xffe38e);
-                addBoatProgress(state.assignedBoat, 3.5, 35);
-                addPersonalScore(45);
-                renderPuzzleGame();
-              } else {
-                drawPuzzle();
+              if (selectedIdx === null) { selectedIdx = idx; drawPuzzle(); return; }
+              if (selectedIdx !== idx) {
+                const tmp = grid[selectedIdx];
+                grid[selectedIdx] = grid[idx];
+                grid[idx] = tmp;
               }
+              selectedIdx = null;
+            }
+            if (isSolved()) {
+              streak++;
+              playCheerSound();
+              spawnSplash(state.assignedBoat, 10, 0xffe38e);
+              addBoatProgress(state.assignedBoat, 3.8, 35);
+              addPersonalScore(50);
+              renderPuzzleGame();
+            } else {
+              drawPuzzle();
             }
           };
         });
@@ -1175,12 +1360,14 @@ function renderRoleControls() {
     else renderPuzzleGame();
   }
 
-  // 4. KẺ PHÁ ĐÁM: Nhấn giữ để xoay hướng tự do + chấm đỏ cong quỹ đạo, không tự khóa mục tiêu
+  // 4. KẺ PHÁ ĐÁM: Giữ xoay hướng + chấm đỏ cong 3D + Bèo đơn (30) / Bèo chùm (50) + Tù Và (45)
   else if (role === 'saboteur') {
+    let useCluster = false;
+
     panel.innerHTML = `
-      <div style="display:flex; justify-content:space-between; font-size:12px;">
-        <strong>${ROLE_NAMES[role]} · Giữ để xoay hướng & tầm ném</strong>
-        <span id="aim-info" style="color:#ff8278; font-weight:700;"></span>
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+        <strong>${ROLE_NAMES[role]} · Giữ xoay hướng & tầm ném</strong>
+        <button id="toggle-cluster" class="secondary" style="width:auto; margin:0; padding:2px 7px; font-size:10.5px;">Bèo Đơn (30)</button>
       </div>
       <div class="btn-group">
         <button id="hold-aim-btn" style="flex:2;">🎯 GIỮ XOAY HƯỚNG NÉM (30 LK)</button>
@@ -1189,23 +1376,41 @@ function renderRoleControls() {
     `;
 
     const aimBtn = document.getElementById('hold-aim-btn');
+    const clusterBtn = document.getElementById('toggle-cluster');
     let startX = 0;
     let startY = 0;
     let cooldownUntil = 0;
 
+    const refreshAimLabel = () => {
+      const cost = useCluster ? 50 : 30;
+      clusterBtn.innerText = useCluster ? '🌿 Bèo Chùm (50)' : '🌱 Bèo Đơn (30)';
+      if (!aimState.active) {
+        aimBtn.innerText = `🎯 GIỮ XOAY HƯỚNG NÉM (${cost} LK)`;
+      }
+    };
+
+    clusterBtn.onclick = () => {
+      useCluster = !useCluster;
+      aimState.cluster = useCluster;
+      refreshAimLabel();
+      if (aimState.active) updateAimArc(state.assignedBoat);
+    };
+
     aimBtn.onpointerdown = (e) => {
       if (Date.now() < cooldownUntil) return;
+      const cost = useCluster ? 50 : 30;
       const myBoat = state.boats[state.assignedBoat];
-      if ((myBoat.mana || 0) < 30) {
-        showTeamBanner('⚠️ Thiếu Linh Khí (cần 30)', 1200);
+      if ((myBoat.mana || 0) < cost) {
+        showTeamBanner(`⚠️ Cần ${cost} Linh Khí`, 1200);
         return;
       }
       aimState.active = true;
+      aimState.cluster = useCluster;
       aimState.yawOffset = 0;
       aimState.range = 15;
       startX = e.clientX;
       startY = e.clientY;
-      aimBtn.innerText = 'KÉO TRÁI/PHẢI/LÊN/XUỐNG — THẢ ĐỂ NÉM';
+      aimBtn.innerText = 'KÉO XOAY HƯỚNG / TẦM — THẢ NÉM';
       aimBtn.setPointerCapture?.(e.pointerId);
       updateAimArc(state.assignedBoat);
     };
@@ -1221,27 +1426,31 @@ function renderRoleControls() {
 
     const releaseThrow = (e) => {
       if (!aimState.active) return;
+      const wasCluster = aimState.cluster;
+      const cost = wasCluster ? 50 : 30;
       aimState.active = false;
-      aimBtn.innerText = '🎯 GIỮ XOAY HƯỚNG NÉM (30 LK)';
+      refreshAimLabel();
       aimBtn.releasePointerCapture?.(e.pointerId);
 
       const land = aimState.landPoint.clone();
       updateAimArc(state.assignedBoat);
 
       const myBoat = state.boats[state.assignedBoat];
-      if ((myBoat.mana || 0) < 30) return;
+      if ((myBoat.mana || 0) < cost) return;
 
-      // Trừ 30 Linh Khí & đặt hồi chiêu ngắn chống spam
-      addBoatProgress(state.assignedBoat, 0, -30);
-      cooldownUntil = Date.now() + 800;
+      addBoatProgress(state.assignedBoat, 0, -cost);
+      cooldownUntil = Date.now() + 750;
 
-      // Kiểm tra điểm rơi có chạm ghe đối thủ nào không (không tự khóa mục tiêu)
+      const hitRadius = wasCluster ? 4.4 : 3.1;
+      const debuffDuration = wasCluster ? 5800 : 4500;
+      const ptsReward = wasCluster ? 55 : 40;
+
       let hitIdx = null;
       for (let i = 0; i < 4; i++) {
         if (i === state.assignedBoat) continue;
         const bPos = boatObjects[i].group.position;
         const distXZ = Math.hypot(land.x - bPos.x, land.z - bPos.z);
-        if (distXZ <= 3.1) {
+        if (distXZ <= hitRadius) {
           hitIdx = i;
           break;
         }
@@ -1249,22 +1458,22 @@ function renderRoleControls() {
 
       if (hitIdx !== null) {
         playDrumSound(195, 0.28, 'sawtooth');
-        spawnSplash(hitIdx, 9, 0x2ecc71);
-        addPersonalScore(40);
+        spawnSplash(hitIdx, wasCluster ? 13 : 9, 0x2ecc71);
+        addPersonalScore(ptsReward);
         if (IS_DEMO_MODE) {
-          state.boats[hitIdx].debuffUntil = Date.now() + 4500;
-          spawn3DProjectileFromTo(state.assignedBoat, land, hitIdx);
-          showTeamBanner(`💣 Trúng Ghe ${hitIdx + 1}! +40đ`);
+          state.boats[hitIdx].debuffUntil = Date.now() + debuffDuration;
+          spawn3DProjectileFromTo(state.assignedBoat, land, hitIdx, wasCluster);
+          showTeamBanner(`💣 Trúng Ghe ${hitIdx + 1}! +${ptsReward}đ`);
         } else {
-          update(ref(db, `rooms/${ROOM_ID}/boats/${hitIdx}`), { debuffUntil: Date.now() + 4500 });
+          update(ref(db, `rooms/${ROOM_ID}/boats/${hitIdx}`), { debuffUntil: Date.now() + debuffDuration });
           update(ref(db, `rooms/${ROOM_ID}`), {
-            lastThrow: { id: 'th_' + Date.now(), from: state.assignedBoat, endX: land.x, endZ: land.z, hitBoatIdx: hitIdx },
+            lastThrow: { id: 'th_' + Date.now(), from: state.assignedBoat, endX: land.x, endZ: land.z, hitBoatIdx: hitIdx, cluster: wasCluster },
             lastEvent: { text: `💣 ${state.name} (G${state.assignedBoat + 1}) ném trúng G${hitIdx + 1}!`, time: Date.now() }
           });
         }
       } else {
         playDrumSound(85, 0.14);
-        spawn3DProjectileFromTo(state.assignedBoat, land, null);
+        spawn3DProjectileFromTo(state.assignedBoat, land, null, wasCluster);
         showTeamBanner('💨 Ném hụt mục tiêu (0đ)', 1300);
       }
     };
@@ -1360,7 +1569,7 @@ function animate() {
   requestAnimationFrame(animate);
   const now = Date.now();
 
-  riverTex.offset.y -= 0.02;
+  riverTex.offset.y -= 0.008;
 
   banners.forEach(b => {
     b.mesh.rotation.y = Math.sin(now * 0.006 + b.phase) * 0.35;
@@ -1371,7 +1580,7 @@ function animate() {
     const targetZ = -Math.min(FINISH_LINE, bData.progress || 0);
     const speedDiff = Math.abs(targetZ - obj.group.position.z);
     obj.group.position.z += (targetZ - obj.group.position.z) * 0.12;
-    obj.group.position.y = 0.35 + Math.sin(now * 0.007 + idx) * 0.1;
+    obj.group.position.y = 0.35 + Math.sin(now * 0.007 + idx) * 0.08;
 
     const isSurging = now < (bData.surgeUntil || 0);
     const hasDrumBuff = (bData.drumCombo || 0) >= 3;
@@ -1382,6 +1591,10 @@ function animate() {
       pad.rotation.z = Math.sin(now * paddleSpeed + pIdx * 0.6) * 0.42 * sideSign;
       pad.rotation.y = Math.cos(now * paddleSpeed + pIdx * 0.6) * 0.22;
     });
+
+    if (obj.tailRibbon) {
+      obj.tailRibbon.rotation.z = Math.sin(now * 0.012 + idx) * 0.25;
+    }
 
     const wakeScale = Math.min(1.6, 0.75 + speedDiff * 0.18 + (isSurging ? 0.4 : 0));
     obj.wake.scale.set(wakeScale, wakeScale, 1);
@@ -1430,7 +1643,6 @@ function animate() {
     }
   }
 
-  // Camera xoay 360° quanh ghe đang theo dõi
   const focusIdx = state.focusBoat !== null ? state.focusBoat : state.assignedBoat;
   const focusMesh = boatObjects[focusIdx].group;
   const radius = 12.5;
