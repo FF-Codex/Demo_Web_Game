@@ -6,50 +6,67 @@
   <title>Đua Ghe Ngo Trống Đồng 3D - 20 Người Chơi</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥁</text></svg>">
   <style>
+    :root {
+      --gold: #e6be52;
+      --gold-bright: #ffe38e;
+      --bronze-dark: #102328;
+      --bronze-panel: #19343b;
+      --cream: #f8eed8;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; touch-action: manipulation; user-select: none; }
-    body { background: #0f2429; color: #f7ebd2; overflow: hidden; }
-    #game-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 1; }
+    body { background: var(--bronze-dark); color: var(--cream); overflow: hidden; }
+    #game-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 1; touch-action: none; }
 
     /* Màn hình Sảnh Chờ & Kết Thúc */
     .overlay {
-      position: fixed; inset: 0; z-index: 10; background: rgba(12, 26, 30, 0.92);
+      position: fixed; inset: 0; z-index: 10;
+      background: radial-gradient(circle at top, rgba(28, 66, 74, 0.94), rgba(10, 22, 26, 0.96));
       display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px; overflow-y: auto;
     }
     .card {
-      background: #1d353a; border: 2px solid #e0b84c; border-radius: 14px;
-      padding: 18px; width: 100%; max-width: 500px; text-align: center; box-shadow: 0 12px 32px rgba(0,0,0,0.65);
+      background: linear-gradient(180deg, rgba(28, 58, 66, 0.96), rgba(17, 36, 41, 0.98));
+      border: 2px solid var(--gold); border-radius: 16px;
+      padding: 18px; width: 100%; max-width: 500px; text-align: center;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255, 227, 142, 0.25);
     }
-    h2 { color: #ffd97d; letter-spacing: 0.5px; font-size: 20px; }
+    h2 { color: var(--gold-bright); letter-spacing: 0.6px; font-size: 20px; text-shadow: 0 2px 10px rgba(230, 190, 82, 0.3); }
     input, select, button {
-      width: 100%; padding: 10px 12px; margin-top: 8px; border-radius: 8px;
-      border: 1px solid #e0b84c; font-size: 14px;
+      width: 100%; padding: 10px 12px; margin-top: 8px; border-radius: 9px;
+      border: 1px solid var(--gold); font-size: 14px;
     }
-    input, select { background: #102024; color: #f7ebd2; }
-    button { background: #e0b84c; color: #122124; font-weight: 700; cursor: pointer; transition: transform 0.12s, filter 0.15s; }
+    input, select { background: #0e1f23; color: var(--cream); }
+    button {
+      background: linear-gradient(180deg, #f3cf68, #cfa132);
+      color: #102024; font-weight: 800; cursor: pointer;
+      transition: transform 0.12s, filter 0.15s, box-shadow 0.15s;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+    }
     button:hover { filter: brightness(1.06); }
     button:active { transform: scale(0.96); }
-    button.secondary { background: #2d4c52; color: #f7ebd2; }
+    button.secondary { background: linear-gradient(180deg, #2b4d54, #1d363c); color: var(--cream); }
 
     #player-list {
       margin-top: 10px; max-height: 150px; overflow-y: auto; text-align: left;
-      background: #102024; padding: 8px 10px; border-radius: 8px; border: 1px solid #3c6269; font-size: 12px;
+      background: #0e1f23; padding: 8px 10px; border-radius: 9px; border: 1px solid #3a626a; font-size: 12px;
     }
-    .player-item { padding: 4px 0; border-bottom: 1px dashed #264247; display: flex; justify-content: space-between; gap: 6px; }
-    .conflict-badge { color: #ff7b72; font-weight: 700; }
+    .player-item { padding: 4px 0; border-bottom: 1px dashed #244046; display: flex; justify-content: space-between; gap: 6px; }
+    .conflict-badge { color: #ff8278; font-weight: 700; }
 
     /* HUD trong lúc đua */
     #hud { position: fixed; inset: 0; z-index: 5; pointer-events: none; display: none; }
     #top-bar {
       position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
       width: 96%; max-width: 680px;
-      background: rgba(14, 30, 34, 0.86); backdrop-filter: blur(4px);
-      padding: 7px 12px; border-radius: 12px; border: 1px solid #e0b84c;
+      background: rgba(13, 30, 35, 0.88); backdrop-filter: blur(6px);
+      padding: 8px 12px; border-radius: 13px; border: 1.5px solid var(--gold);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
     }
-    #scoreboard { display: flex; justify-content: space-between; gap: 6px; font-size: 12px; font-weight: 700; flex-wrap: wrap; }
-    #my-badge { margin-top: 3px; font-size: 12px; color: #ffd97d; text-align: center; }
+    #scoreboard { display: flex; justify-content: space-between; gap: 6px; font-size: 12px; font-weight: 800; flex-wrap: wrap; }
+    #my-badge { margin-top: 3px; font-size: 12px; color: var(--gold-bright); text-align: center; }
     #role-brief {
-      margin-top: 4px; font-size: 11px; line-height: 1.35; color: #dceeed;
-      background: rgba(255, 255, 255, 0.05); border-radius: 7px; padding: 4px 8px; text-align: left;
+      margin-top: 4px; font-size: 11px; line-height: 1.35; color: #e2f2f3;
+      background: rgba(255, 227, 142, 0.06); border: 1px solid rgba(230, 190, 82, 0.22);
+      border-radius: 8px; padding: 4px 8px; text-align: left;
     }
 
     #cam-bar {
@@ -57,42 +74,40 @@
       margin-top: 6px; pointer-events: auto; flex-wrap: wrap;
     }
     .cam-btn {
-      width: auto; margin-top: 0; padding: 4px 8px; font-size: 11px;
-      background: #234046; color: #f7ebd2; border: 1px solid #7d9fa6; border-radius: 6px;
+      width: auto; margin-top: 0; padding: 4px 8px; font-size: 11px; box-shadow: none;
+      background: #213e45; color: var(--cream); border: 1px solid #759ba3; border-radius: 7px;
     }
-    .cam-btn.active { background: #e0b84c; color: #122124; border-color: #fff; }
+    .cam-btn.active { background: var(--gold); color: #102024; border-color: #fff3c4; }
 
-    /* Banner hiệu ứng đồng đội ("TRỐNG TỐT!", buff, cảnh báo) */
     #team-banner {
-      position: absolute; top: 108px; left: 50%; transform: translateX(-50%);
-      background: linear-gradient(90deg, #b87b14, #ffd97d, #b87b14);
-      color: #162224; font-weight: 900; font-size: 13px; letter-spacing: 0.4px;
-      padding: 5px 14px; border-radius: 999px; box-shadow: 0 4px 16px rgba(255, 217, 125, 0.45);
+      position: absolute; top: 112px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(90deg, #b87b14, #ffe38e, #b87b14);
+      color: #132124; font-weight: 900; font-size: 13px; letter-spacing: 0.4px;
+      padding: 5px 15px; border-radius: 999px; box-shadow: 0 4px 18px rgba(255, 227, 142, 0.5);
       display: none; white-space: nowrap;
     }
     #feed {
-      position: absolute; top: 136px; left: 50%; transform: translateX(-50%);
-      font-size: 11px; background: rgba(186, 52, 38, 0.92); color: #fff; padding: 3px 11px;
+      position: absolute; top: 140px; left: 50%; transform: translateX(-50%);
+      font-size: 11px; background: rgba(190, 52, 38, 0.92); color: #fff; padding: 3px 12px;
       border-radius: 999px; display: none; white-space: nowrap;
     }
 
-    /* Đếm ngược xuất phát */
     #countdown {
       position: fixed; inset: 0; z-index: 8; display: none; align-items: center; justify-content: center;
-      font-size: 82px; font-weight: 900; color: #ffd97d; text-shadow: 0 0 25px #e0b84c; background: rgba(0,0,0,0.42);
+      font-size: 84px; font-weight: 900; color: var(--gold-bright);
+      text-shadow: 0 0 28px rgba(230, 190, 82, 0.85); background: rgba(0,0,0,0.42);
     }
 
-    /* Khu vực điều khiển vai trò */
     #role-panel {
       position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
-      width: 96%; max-width: 560px; background: rgba(23, 43, 48, 0.92);
-      border: 2px solid #e0b84c; border-radius: 14px; padding: 11px 13px;
-      pointer-events: auto; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      width: 96%; max-width: 560px;
+      background: linear-gradient(180deg, rgba(24, 47, 53, 0.94), rgba(14, 29, 34, 0.96));
+      border: 2px solid var(--gold); border-radius: 14px; padding: 11px 13px;
+      pointer-events: auto; text-align: center; box-shadow: 0 10px 26px rgba(0,0,0,0.55);
     }
     .btn-group { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
     .btn-group button { margin-top: 0; padding: 11px 8px; font-size: 13px; }
 
-    /* Bố cục tối ưu màn hình ngang (Landscape / Màn hình rộng) */
     @media (orientation: landscape) and (max-height: 540px) {
       #top-bar { top: 6px; left: 10px; transform: none; width: 46%; max-width: 440px; padding: 6px 9px; }
       #role-brief { font-size: 10px; padding: 3px 6px; }
@@ -121,7 +136,7 @@
   <div id="lobby" class="overlay">
     <div class="card">
       <h2>🥁 ĐUA GHE NGO TRỐNG ĐỒNG</h2>
-      <p style="font-size: 12px; opacity: 0.85; margin-top: 3px;">4 Ghe × 5 Vai Trò — Phối hợp nhịp chèo, trống đồng, linh khí & phá đám</p>
+      <p style="font-size: 12px; opacity: 0.88; margin-top: 3px;">4 Ghe × 5 Vai Trò — Phối hợp nhịp chèo, trống đồng, linh khí & phá đám</p>
 
       <input id="player-name" placeholder="Nhập tên hiển thị của bạn..." maxlength="14" />
       <select id="pref-boat">
