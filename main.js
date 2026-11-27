@@ -1,6 +1,6 @@
-import * as THREE from 'https://unpkg.com';
-import { initializeApp } from 'https://gstatic.com';
-import { getDatabase, ref, set, update, onValue, runTransaction, onDisconnect } from 'https://gstatic.com';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+import { getDatabase, ref, set, update, onValue, runTransaction, onDisconnect } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js';
 
 // ================= 1. CẤU HÌNH FIREBASE (GIỮ NGUYÊN CỦA BẠN) =================
 const firebaseConfig = {
